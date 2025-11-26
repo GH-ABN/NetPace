@@ -75,8 +75,8 @@ public sealed class OoklaSpeedtest : ISpeedTestService
     private static async Task<ServerLatencyResult> GetServerLatencyAsync(IServer server, HttpClient httpClient, IDelayProvider delayProvider, int httpTimeoutMilliseconds, int maxIterations, int intervalMilliseconds, Action<LatencyTestProgress> UpdateProgress, CancellationToken cancellationToken)
     {
         var latencyUrl = GetBaseUrl(server.Url) + "latency.txt";
+        var pings = new List<int>();
         var stopwatch = new Stopwatch();
-
 
         for (var iteration = 0; iteration < maxIterations; iteration++)
         {
@@ -88,7 +88,7 @@ public sealed class OoklaSpeedtest : ISpeedTestService
                 await delayProvider.DelayAsync(intervalMilliseconds, cancellationToken).ConfigureAwait(false);
             }
 
-            stopwatch.Start();
+            stopwatch.Restart();
             var testString = await httpClient.GetStringWithTimeoutAsync(latencyUrl, TimeSpan.FromMilliseconds(httpTimeoutMilliseconds), cancellationToken).ConfigureAwait(false);
             stopwatch.Stop();
 
@@ -97,16 +97,23 @@ public sealed class OoklaSpeedtest : ISpeedTestService
                 throw new InvalidOperationException("Server returned incorrect test string for latency.txt");
             }
 
+            // Record this ping time
+            pings.Add((int)stopwatch.ElapsedMilliseconds);
+
             // Report progress after each iteration
             var percentageComplete = (iteration + 1) * 100 / maxIterations;
-            UpdateProgress(new LatencyTestProgress { PercentageComplete = percentageComplete });
+            UpdateProgress(new LatencyTestProgress
+            {
+                PercentageComplete = percentageComplete,
+                Pings = new List<int>(pings)
+            });
         }
 
         // Calculate the average server latency.
         var latencyResult = new ServerLatencyResult
         {
             Server = server,
-            Latency = (int)stopwatch.ElapsedMilliseconds / maxIterations
+            Latency = (int)pings.Average()
         };
 
         return latencyResult;
