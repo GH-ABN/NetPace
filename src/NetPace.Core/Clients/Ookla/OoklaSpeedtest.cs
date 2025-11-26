@@ -49,7 +49,7 @@ public sealed class OoklaSpeedtest : ISpeedTestService
     }
 
     /// <inheritdoc/>
-    public async Task<ServerLatencyResult> GetServerLatencyAsync(IServer server, Action<SpeedTestProgress> UpdateProgress, CancellationToken cancellationToken = default)
+    public async Task<ServerLatencyResult> GetServerLatencyAsync(IServer server, Action<LatencyTestProgress> UpdateProgress, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(server);
         ArgumentException.ThrowIfNullOrWhiteSpace(server.Url);
@@ -64,7 +64,7 @@ public sealed class OoklaSpeedtest : ISpeedTestService
     }
 
     /// <inheritdoc/>
-    public async Task<ServerLatencyResult> GetServerLatencyAsync(string serverUrl, Action<SpeedTestProgress> UpdateProgress, CancellationToken cancellationToken = default)
+    public async Task<ServerLatencyResult> GetServerLatencyAsync(string serverUrl, Action<LatencyTestProgress> UpdateProgress, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(serverUrl);
 
@@ -72,7 +72,7 @@ public sealed class OoklaSpeedtest : ISpeedTestService
         return await GetServerLatencyAsync(server, httpClient, delayProvider, settings.LatencyTest.DefaultHttpTimeoutMilliseconds, settings.LatencyTest.LatencyTestIterations, settings.LatencyTest.LatencyTestIntervalMilliseconds, UpdateProgress, cancellationToken);
     }
 
-    private static async Task<ServerLatencyResult> GetServerLatencyAsync(IServer server, HttpClient httpClient, IDelayProvider delayProvider, int httpTimeoutMilliseconds, int maxIterations, int intervalMilliseconds, Action<SpeedTestProgress> UpdateProgress, CancellationToken cancellationToken)
+    private static async Task<ServerLatencyResult> GetServerLatencyAsync(IServer server, HttpClient httpClient, IDelayProvider delayProvider, int httpTimeoutMilliseconds, int maxIterations, int intervalMilliseconds, Action<LatencyTestProgress> UpdateProgress, CancellationToken cancellationToken)
     {
         var latencyUrl = GetBaseUrl(server.Url) + "latency.txt";
         var stopwatch = new Stopwatch();
@@ -99,7 +99,7 @@ public sealed class OoklaSpeedtest : ISpeedTestService
 
             // Report progress after each iteration
             var percentageComplete = (iteration + 1) * 100 / maxIterations;
-            UpdateProgress(new SpeedTestProgress { PercentageComplete = percentageComplete });
+            UpdateProgress(new LatencyTestProgress { PercentageComplete = percentageComplete });
         }
 
         // Calculate the average server latency.
